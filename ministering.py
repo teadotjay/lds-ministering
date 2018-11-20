@@ -4,9 +4,27 @@ import getpass
 import re
 from collections import namedtuple
 
+class Person:
+  __slots__ = {'_name', '_email', '_id', '_legacyid'}
+  def __init__(self, name, email, id, legacyid):
+    self._name = name
+    self._email = email
+    self._id = id
+    self._legacyid = legacyid
+  def __repr__(self):
+    return "%s(%s)" % (self.__class__.__name__, self._name)
+  @property
+  def name(self): return self._name
+  @property 
+  def email(self): return self._email
+  @property 
+  def id(self): return self._id
+  @property 
+  def legacyid(self): return self._legacyid
+
 class Session:
   def __init__(self):
-    self._cookies = None
+    self._session = None
     self._username = None
     self._assignments = None
 
@@ -18,7 +36,8 @@ class Session:
       password = getpass.getpass('Password: ')
 
     payload = {'username': username, 'password': password}
-    r = requests.post('https://signin.lds.org/login.html', data=payload)
+    self._session = requests.session()
+    r = self._session.post('https://signin.lds.org/login.html', data=payload)
 
     if not '<meta http-equiv="refresh"' in r.text:
       raise PermissionError("Login failed")
@@ -29,24 +48,22 @@ class Session:
     return self
 
 
-  def checkLogin(self):
-    if self._cookies is None:
+  def check_login(self):
+    if self._session is None:
       return False
-    r = requests.get('https://lcr.lds.org/?lang=eng', cookies=self._cookies)
-    self._cookies = r.cookies
-    if '<title>Sign in</title>' in r.text:
-      return False
-    else:
+    r = self._session.get('https://account.lds.org/features')
+    if r.status_code==200:
       return True
+    else:
+      return False
 
 
-  def downloadAssignments(self):
-    if not self.checkLogin():
+  def download_assignments(self):
+    if not self.check_login():
       self.login()
 
     url = 'https://lcr.lds.org/ministering-proposed-assignments?lang=eng&type=EQ'
-    r = requests.get(url, cookies=self._cookies)
-    self._cookies = r.cookies
+    r = self._session.get(url)
 
     # parse response to get json encoded sandbox assignments
     m = re.search(r'__NEXT_DATA__ = ({.*})$', r.text, re.MULTILINE)
@@ -60,9 +77,9 @@ class Session:
       raise ValueError("Could not parse response from lds.org")
 
 
-  def getDistricts(self, dataset='elders'):
+  def get_districts(self, dataset='elders'):
     if self._assignments is None:
-      self.downloadAssignments()
+      self.download_assignments()
     # get districts
     district_list = []
     districts = self._assignments[dataset]
@@ -76,7 +93,7 @@ class Session:
     return district_list
 
 
-  def getCompanionships(self, district_uuids=None, dataset='elders'):
+  def get_companionships(self, district_uuids=None, dataset='elders'):
     if district_uuids:
       matches = [x for x in self._assignments[dataset] if x['districtUuid'] in district_uuids]
     else:
@@ -117,9 +134,9 @@ class Session:
     return companionship_list
 
 
-  def createCompanionship(self, district_uuid, minister_uuids, assignment_uuids=[]):
-#    if not self.checkLogin():
-#      self.login()
+  def create_companionship(self, district_uuid, minister_uuids, assignment_uuids=[]):
+    if not self.check_login():
+      self.login()
     ministers = [{'personUuid': x, 'overrideWarnings': True} for x in minister_uuids]
     assignments = [{'personUuid': x, 'overrideWarnings': True} for x in assignment_uuids]
     data = {
@@ -135,8 +152,8 @@ class Session:
     return r
     
   def testCreateCompanionship(self):
-#    if not self.checkLogin():
-#      self.login()
+    if not self.check_login():
+      self.login()
     data = {'assignments': [],
       'district': {'uuid': '537ecb92-4d6b-468f-ae4a-16c0d344d8f2'},
       'ministeringPeople': [{'legacyCmisId': 1916828374,
@@ -156,27 +173,27 @@ class Session:
     
 
 
-  def saveAssignments(self, filename='ministering_assignments.json'):
+  def save_assignments(self, filename='ministering_assignments.json'):
     if self._assignments is None:
-      self.downloadAssignments()
+      self.download_assignments()
     with open(filename, 'w') as fp:
       json.dump(self._assignments, fp)
     
 
-  def loadAssignments(self, filename='ministering_assignments.json'):
+  def load_assignments(self, filename='ministering_assignments.json'):
     with open(filename, 'r') as fp:
       self._assignments = json.load(fp)
     return self
 
 
-  def saveSession(self, filename='ministering_session.json'):
+  def save_session(self, filename='ministering_session.json'):
     if self._cookies is None:
       self.login()
     with open(filename, 'w') as fp:
       json.dump(requests.utils.dict_from_cookiejar(self._cookies), fp)
 
 
-  def loadSession(self, filename='ministering_session.json'):
+  def load_session(self, filename='ministering_session.json'):
     with open(filename, 'r') as fp:
       self._cookies = requests.utils.cookiejar_from_dict(json.load(fp))
     return self
@@ -184,18 +201,18 @@ class Session:
 if __name__ == '__main__':
   import menu3
 
-  def displayDistrict():
+  def display_district():
     ...
 
   def initialMenu():
     m = menu3.Menu(ALLOW_QUIT=True)
     menuitems = [
       ('Login', ms.login),
-      ('Load session from disk', ms.loadSession),
-      ('Save session to disk', ms.saveSession),
-      ('Load assignments from disk', ms.loadAssignments),
-      ('Save assignments to disk', ms.saveAssignments),
-      ('Download assignments from lds.org', ms.downloadAssignments),
+      ('Load session from disk', ms.load_session),
+      ('Save session to disk', ms.save_session),
+      ('Load assignments from disk', ms.load_assignments),
+      ('Save assignments to disk', ms.save_assignments),
+      ('Download assignments from lds.org', ms.download_assignments),
       ('Display district', displayDistrict)
     ]
 
@@ -208,8 +225,8 @@ if __name__ == '__main__':
   ms = Session()
 
   # load previous session and data from disk
-  ms.loadAssignments()
-  ms.loadSession()
+  ms.load_assignments()
+  ms.load_session()
 
   # display menu
   # while True:
