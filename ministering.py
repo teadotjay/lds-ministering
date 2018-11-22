@@ -100,8 +100,6 @@ class Session:
       matches = self._assignments[dataset]
 
     Companionship = namedtuple("Companionship", "uuid district_uuid ministers assignments")
-    Minister = namedtuple("Minister", "name uuid email")
-    Assignment = namedtuple("Assignment", "name uuid email")
 
     companionship_list = []
 
@@ -114,8 +112,9 @@ class Session:
               email = minister['email']
             else:
               email = None
-            minister_list.append(Minister(
-              name=minister['name'], uuid=minister['personUuid'], email=email))
+            minister_list.append(Person(
+              name=minister['name'], email=email,
+              id=minister['personUuid'], legacyid=minister['legacyCmisId']))
         
           assignment_list = []
           if 'assignments' in companionship:
@@ -124,8 +123,9 @@ class Session:
                 email = assignment['email']
               else:
                 email = None
-              assignment_list.append(Assignment(
-                name=assignment['name'], uuid=assignment['personUuid'], email=email))
+              assignment_list.append(Person(
+                name=assignment['name'], email=email,
+                id=assignment['personUuid'], legacyid=assignment['legacyCmisId']))
 
           companionship_list.append(Companionship(
             uuid=companionship['id'], district_uuid=district['districtUuid'],
