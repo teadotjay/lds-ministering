@@ -4,15 +4,34 @@ import getpass
 import re
 from collections import namedtuple
 
+class District:
+  __slots__ = {'_id', '_name', '_supervisor', '_companionships'}
+  def __init__(self, id, name, supervisor, companionships):
+    self._id = id
+    self._name = name
+    self._supervisor = supervisor
+    self._companionships = companionships
+  def __repr__(self):
+    return '%s("%s")' % (self.__class__.__name__, self._name)
+  @property
+  def id(self): return self._id
+  @property 
+  def name(self): return self._name
+  @property 
+  def supervisor(self): return self._supervisor
+  @property 
+  def companionships(self): return self._companionships
+
+
 class Person:
-  __slots__ = {'_name', '_email', '_id', '_legacyid'}
-  def __init__(self, name, email, id, legacyid):
+  __slots__ = {'_name', '_email', '_id', '_legacy_id'}
+  def __init__(self, id, legacy_id, name=None, email=None):
+    self._id = id
+    self._legacy_id = legacy_id
     self._name = name
     self._email = email
-    self._id = id
-    self._legacyid = legacyid
   def __repr__(self):
-    return "%s(%s)" % (self.__class__.__name__, self._name)
+    return '%s("%s")' % (self.__class__.__name__, self._name)
   @property
   def name(self): return self._name
   @property 
@@ -20,14 +39,129 @@ class Person:
   @property 
   def id(self): return self._id
   @property 
-  def legacyid(self): return self._legacyid
+  def legacy_id(self): return self._legacy_id
 
-class Session:
+
+class Companionship:
+  __slots__ = {'_id','_name','_ministers','_assignments'}
+  def __init__(self, id, name, ministers, assignments):
+    self._id = id
+    self._name = name
+    self._ministers = ministers
+    self._assignments = assignments
+  def __repr__(self):
+    return '%s("%s")' % (self.__class__.__name__, self._name)
+  @property
+  def name(self): return self._name
+  @property
+  def ministers(self): return self._ministers
+  @property
+  def assignments(self): return self._assignments
+
+
+class MinisteringAssignments:
+  __slots__ = ['_person_by_id', '_person_by_name', '_companionship_by_id',
+    '_companionship_by_name', '_district_by_id', '_district_by_name',
+    '_district_list', '_data']
+  def __init__(self, data=None, dataset='elders'):
+    if data:
+      self.loads(data, dataset)
+    else:
+      self._person_by_id = {}
+      self._person_by_name = {}
+      self._companionship_by_id = {}
+      self._companionship_by_name = {}
+      self._district_by_id = {}
+      self._district_by_name = {}
+      self._district_list = []
+
+  def loads(self, data, dataset='elders'):
+    self._data = data[dataset]
+    self._person_by_id = {}
+    self._person_by_name = {}
+    self._companionship_by_id = {}
+    self._companionship_by_name = {}
+    self._district_by_id = {}
+    self._district_by_name = {}
+    self._district_list = []
+
+    # process districts
+    district_list = []
+    for district in data[dataset]:
+      companionship_list = []
+        
+      if 'companionships' in district:
+        for companionship in district['companionships']:
+          # process ministers
+          minister_list = []
+          for person in companionship['ministers']:
+            if 'email' in person:
+              email = person['email']
+            else:
+              email = None
+            personObj = Person(
+              name = person['name'],
+              email = email,
+              id = person['personUuid'],
+              legacy_id = person['legacyCmisId'])
+            minister_list.append(personObj)
+            self._person_by_id[person['personUuid']] = personObj
+            self._person_by_name[person['name']] = personObj
+
+          # process assignments
+          assignment_list = []
+          if 'assignments' in companionship:
+            for person in companionship['assignments']:
+              if 'email' in person:
+                email = person['email']
+              else:
+                email = None
+              personObj = Person(
+                name = person['name'],
+                email = email,
+                id = person['personUuid'],
+                legacy_id = person['legacyCmisId'])
+              assignment_list.append(personObj)
+              self._person_by_id[person['personUuid']] = personObj
+              self._person_by_name[person['name']] = personObj
+
+          # add companionship record
+          companionshipObj = Companionship(
+            id = companionship['id'],
+            name = " and ".join([x.name for x in minister_list]),
+            ministers = minister_list,
+            assignments = assignment_list)
+          companionship_list.append(companionshipObj)
+          if not companionshipObj.name in self._companionship_by_name:
+            self._companionship_by_name[companionshipObj._name] = []
+          self._companionship_by_name[companionshipObj._name].append(companionshipObj)
+          self._companionship_by_id[companionshipObj._id] = companionshipObj
+
+      # add supervisor record
+      supervisorObj = Person(
+        id = district['supervisorPersonUuid'],
+        legacy_id = district['supervisorLegacyCmisId'],
+        name = district['supervisorName'],
+        email = None)
+
+      # add district record
+      districtObj = District(
+        name = district['districtName'],
+        id = district['districtUuid'],
+        supervisor = supervisorObj,
+        companionships = companionship_list)
+      self._district_list.append(districtObj)
+      self._district_by_id[districtObj.id] = districtObj
+      self._district_by_name[districtObj.name] = districtObj
+ 
+    return self
+    
+    
+
+class LdsSession:
   def __init__(self):
     self._session = None
-    self._username = None
-    self._assignments = None
-
+    self._data = None
 
   def login(self, username=None, password=None):
     if username==None:
@@ -43,10 +177,7 @@ class Session:
       raise PermissionError("Login failed")
 
     self._cookies = r.cookies
-    self._username = username
-
     return self
-
 
   def check_login(self):
     if self._session is None:
@@ -56,7 +187,6 @@ class Session:
       return True
     else:
       return False
-
 
   def download_assignments(self):
     if not self.check_login():
@@ -69,70 +199,11 @@ class Session:
     m = re.search(r'__NEXT_DATA__ = ({.*})$', r.text, re.MULTILINE)
     if m:
       json_string = m.group(1)
-      data = json.loads(json_string)
-      assignments = data['props']['initialState']['ministeringData']
-      self._assignments = assignments
-      return self
+      all_data = json.loads(json_string)
+      self._data = all_data['props']['initialState']['ministeringData']
+      return MinisteringAssignments(self._data)
     else:
       raise ValueError("Could not parse response from lds.org")
-
-
-  def get_districts(self, dataset='elders'):
-    if self._assignments is None:
-      self.download_assignments()
-    # get districts
-    district_list = []
-    districts = self._assignments[dataset]
-    for district in districts:
-      District = namedtuple("District", "name uuid supervisor_name supervisor_uuid")
-      district_list.append(District(
-        name = district['districtName'],
-        uuid = district['districtUuid'],
-        supervisor_name = district['supervisorName'],
-        supervisor_uuid = district['supervisorPersonUuid']))
-    return district_list
-
-
-  def get_companionships(self, district_uuids=None, dataset='elders'):
-    if district_uuids:
-      matches = [x for x in self._assignments[dataset] if x['districtUuid'] in district_uuids]
-    else:
-      matches = self._assignments[dataset]
-
-    Companionship = namedtuple("Companionship", "uuid district_uuid ministers assignments")
-
-    companionship_list = []
-
-    for district in matches:
-      if 'companionships' in district:
-        for companionship in district['companionships']:
-          minister_list = []
-          for minister in companionship['ministers']:
-            if 'email' in minister:
-              email = minister['email']
-            else:
-              email = None
-            minister_list.append(Person(
-              name=minister['name'], email=email,
-              id=minister['personUuid'], legacyid=minister['legacyCmisId']))
-        
-          assignment_list = []
-          if 'assignments' in companionship:
-            for assignment in companionship['assignments']:
-              if 'email' in assignment:
-                email = assignment['email']
-              else:
-                email = None
-              assignment_list.append(Person(
-                name=assignment['name'], email=email,
-                id=assignment['personUuid'], legacyid=assignment['legacyCmisId']))
-
-          companionship_list.append(Companionship(
-            uuid=companionship['id'], district_uuid=district['districtUuid'],
-            ministers=minister_list, assignments=assignment_list))
-
-    return companionship_list
-
 
   def create_companionship(self, district_uuid, minister_uuids, assignment_uuids=[]):
     if not self.check_login():
@@ -147,8 +218,7 @@ class Session:
     jsondata = json.dumps(data)
     url = 'https://lcr.lds.org/services/umlu/v1/ministering/sandbox-companionship?lang=eng'
     headers = {'content-type': 'application/json;charset=UTF-8'}
-    r = requests.put(url, json=data, cookies=self._cookies)
-    self._cookies = r.cookies
+    r = self._session.put(url, json=data)
     return r
     
   def testCreateCompanionship(self):
@@ -171,32 +241,30 @@ class Session:
     self._cookies = r.cookies
     return r
     
-
-
   def save_assignments(self, filename='ministering_assignments.json'):
     if self._assignments is None:
       self.download_assignments()
     with open(filename, 'w') as fp:
       json.dump(self._assignments, fp)
-    
 
   def load_assignments(self, filename='ministering_assignments.json'):
     with open(filename, 'r') as fp:
-      self._assignments = json.load(fp)
-    return self
-
+      self._data = json.load(fp)
+    return MinisteringAssignments(self._data)
 
   def save_session(self, filename='ministering_session.json'):
     if self._cookies is None:
       self.login()
     with open(filename, 'w') as fp:
-      json.dump(requests.utils.dict_from_cookiejar(self._cookies), fp)
-
+      json.dump(requests.utils.dict_from_cookiejar(self._session.cookies), fp)
 
   def load_session(self, filename='ministering_session.json'):
     with open(filename, 'r') as fp:
-      self._cookies = requests.utils.cookiejar_from_dict(json.load(fp))
+      self._session = requests.session()
+      self._session.cookies = requests.utils.cookiejar_from_dict(json.load(fp))
+
     return self
+
 
 if __name__ == '__main__':
   import menu3
@@ -222,10 +290,10 @@ if __name__ == '__main__':
 
 
   # initialize session
-  ms = Session()
+  ms = LdsSession()
 
   # load previous session and data from disk
-  ms.load_assignments()
+  ma = ms.load_assignments()
   ms.load_session()
 
   # display menu
