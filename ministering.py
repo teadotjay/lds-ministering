@@ -241,16 +241,16 @@ class LdsSession:
     self._cookies = r.cookies
     return r
     
-  def save_assignments(self, filename='ministering_assignments.json'):
-    if self._assignments is None:
+  def save_data(self, filename='ministering_assignments.json'):
+    if self._data is None:
       self.download_assignments()
     with open(filename, 'w') as fp:
-      json.dump(self._assignments, fp)
+      json.dump(self._data, fp)
 
-  def load_assignments(self, filename='ministering_assignments.json'):
+  def load_data(self, filename='ministering_assignments.json', dataset='elders'):
     with open(filename, 'r') as fp:
       self._data = json.load(fp)
-    return MinisteringAssignments(self._data)
+    return MinisteringAssignments(self._data, dataset)
 
   def save_session(self, filename='ministering_session.json'):
     if self._cookies is None:
@@ -293,7 +293,7 @@ if __name__ == '__main__':
   ms = LdsSession()
 
   # load previous session and data from disk
-  ma = ms.load_assignments()
+  ma = ms.load_data()
   ms.load_session()
 
   # display menu
