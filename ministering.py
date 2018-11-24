@@ -250,14 +250,11 @@ class MinisteringSession:
     if r.status_code != 201:
       raise ValueError(r.text)
 
-  def copy_companionships(self, from_districts, to_district, copy_assignments=False):
+  def copy_companionships(self, from_districts, to_district):
     for district in from_districts:
       for companionship in district.companionships:
         print('Copying %s from %s to %s' % (companionship, district, to_district))
-        if copy_assignments:
-          self.create_companionship(to_district, companionship.ministers, companionship.assignments)
-        else:
-          self.create_companionship(to_district, companionship.ministers)
+        self.create_companionship(to_district, companionship.ministers)
     
   def testCreateCompanionship(self):
     if not self.check_login():
