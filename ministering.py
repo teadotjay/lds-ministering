@@ -3,7 +3,6 @@ import json
 import getpass
 import re
 import random
-from collections import namedtuple
 
 class District:
     __slots__ = {'_id', '_name', '_supervisor', '_companionships'}
