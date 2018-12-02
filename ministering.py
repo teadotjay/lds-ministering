@@ -75,6 +75,12 @@ class MinisteringAssignments:
             self._assignment_list = []
     
     def get_districts(self, id=None, name=None):
+        """ Return list of districts optionally matched by id or name
+
+        Keyword parameters:
+        id -- unique ID (uuid) of district
+        name -- name of district
+        """
         if id:
             return [x for x in self._district_list if id == x.id]
         if name:
@@ -86,6 +92,12 @@ class MinisteringAssignments:
         return self.get_districts()
     
     def get_ministers(self, id=None, name=None):
+        """ Return list of assigned minister optionally matched by id or name
+
+        Keyword parameters:
+        id -- unique ID (uuid) of minister
+        name -- name of minister
+        """
         if id:
             return [x for x in self._minister_list if id == x.id]
         if name:
@@ -97,6 +109,12 @@ class MinisteringAssignments:
         return self.get_ministers()
 
     def get_assignments(self, id=None, name=None):
+        """ Return list of assigned households optionally matched by id or name
+
+        Keyword parameters:
+        id -- unique ID (uuid) of head of household
+        name -- name of household
+        """
         if id:
             return [x for x in self._assignment_list if id == x.id]
         if name:
@@ -108,6 +126,12 @@ class MinisteringAssignments:
         return self.get_assignments()
 
     def get_companionships(self, id=None, name=None):
+        """ Return list of companionships optionally matched by id or name
+
+        Keyword parameters:
+        id -- unique ID (uuid) of companionship
+        name -- name of companionship
+        """
         if id:
             return [x for x in self._companionship_list if id == x.id]
         if name:
@@ -119,6 +143,13 @@ class MinisteringAssignments:
         return self.get_companionships()
 
     def loads(self, data, dataset='elders'):
+        """ Parse JSON data from lds.org and populate the current 
+        MinisteringAssignments record
+
+        Keyword parameters:
+        data -- JSON data from https://lcr.lds.org/ministering-proposed-assignments
+        dataset -- subset of JSON data to use for ministering data (default: 'elders')
+        """
         self._data = data[dataset]
         self._district_list = []
         self._companionship_list = []
@@ -201,6 +232,12 @@ class MinisteringEligible:
             self._data = None
     
     def get_ministers(self, id=None, name=None):
+        """ Return list of eligible minister(s) matched by id or name
+
+        Keyword parameters:
+        id -- unique ID (uuid) of minister
+        name -- name of minister
+        """
         if id:
             return [x for x in self._minister_list if id == x.id]
         if name:
@@ -212,6 +249,12 @@ class MinisteringEligible:
         return self.get_ministers()
 
     def get_assignments(self, id=None, name=None):
+        """ Return list of eligible households optionally matched by id or name
+
+        Keyword parameters:
+        id -- unique ID (uuid) of head of household
+        name -- name of household
+        """
         if id:
             return [x for x in self._assignment_list if id == x.id]
         if name:
@@ -223,6 +266,14 @@ class MinisteringEligible:
         return self.get_assignments()
 
     def loads(self, data, dataset='eligibleMinistersAndAssignments'):
+        """ Parse JSON data from lds.org and populate the current 
+        MinisteringEligible record
+
+        Keyword parameters:
+        data -- JSON data from https://lcr.lds.org/ministering-proposed-assignments
+        dataset -- subset of JSON data to use for ministering data 
+                (default: 'eligibleMinistersAndAssignments')
+        """
         data = data[dataset]
         self._data = data
         self._minister_list = []
@@ -275,6 +326,12 @@ class MinisteringSession:
         self._stale = True
 
     def login(self, username=None, password=None):
+        """ Login to lds.org and raise PermissionError if failed
+
+        Keyword arguments:
+        username -- lds.org username (default: prompt)
+        password -- lds.org password (default: prompt)
+        """
         if username==None:
             username = input('Username: ')
         if password==None:
@@ -288,6 +345,7 @@ class MinisteringSession:
             raise PermissionError("Login failed")
 
     def check_login(self):
+        """ Check if currently logged in with access to the ministering section """
         if self._session is None:
             return False
         url = "https://lcr.lds.org/services/umlu/v1/ministering/sandbox-data-full?lang=eng&type=EQ"
@@ -298,6 +356,12 @@ class MinisteringSession:
             return True
 
     def download_assignments(self, dataset='elders'):
+        """ Download ministering assignments from lds.org and populate
+        the structure from the selected dataset; raise ValueError if failed
+
+        Keyword arguments:
+        dataset -- dataset to populate (default: 'elders')
+        """
         if not self.check_login():
             self.login()
 
@@ -323,9 +387,33 @@ class MinisteringSession:
             raise ValueError("Could not parse response from lds.org")
 
     def create_companionship(self, district, ministers, assignments=[]):
+        """ Create a new companionship in the given district, with the given
+        list of ministers and optional list of households; raise ValueError
+        if failed; attempt to log in if not currently logged in
+
+        Keyword arguments:
+        district -- District object of the district in which to place the
+                new companionship
+        ministers -- list of ministers for the companionship, each given by
+                a Person record
+        assignments -- optional list of households for the companionship, each 
+                given by a Person record
+        """
         self.update_companionship(district, None, ministers, assignments)
 
     def update_companionship(self, district, companionship, ministers, assignments=[]):
+        """ Update an existing companionship in the given district, with the
+        given list of ministers and optional list of households; raise
+        ValueError if failed; attempt to log in if not currently logged in
+
+        Keyword arguments:
+        district -- District object of the district holding the companionship
+        companionship -- Companionship record of the existing companionship
+        ministers -- list of ministers for the companionship, each given by
+                a Person record
+        assignments -- optional list of households for the companionship, each 
+                given by a Person record
+        """
         if not self.check_login():
             self.login()
         minister_string = [{'personUuid': x.id, 'legacyCmisId': x.legacy_id, 'overrideWarnings': True} for x in ministers]
@@ -352,6 +440,12 @@ class MinisteringSession:
             raise ValueError((r.status_code, r.text))
 
     def delete_companionship(self, companionship):
+        """ Delete an existing companionship; raise PermissionError or
+        ValueError if failed; attempt to log in if not currently logged in
+
+        Keyword arguments:
+        companionship -- Companionship record of the companionship to be deleted
+        """
         if not self.check_login():
             self.login()
         url = "https://lcr.lds.org/services/umlu/v1/ministering/sandbox-companionship/%s?lang=eng" % (
@@ -361,7 +455,7 @@ class MinisteringSession:
         notfound_code = 400
         notloggedin_code = 200
         if r.status_code == notloggedin_code:
-            raise ValueError("Access denied (may need to log in again)")
+            raise PermissionError("Access denied (may need to log in again)")
         elif r.status_code == notfound_code:
             raise ValueError("Companionship not found")
         elif r.status_code != good_code:
@@ -369,6 +463,13 @@ class MinisteringSession:
         self._stale = True
 
     def delete_companionships(self, district, preview=False):
+        """ Delete all companionships in district; raise PermissionError or
+        ValueError if failed; attempt to log in if not currently logged in
+
+        Keyword arguments:
+        district -- District record of the district to be purged
+        preview -- preview output before committing chanages (default: False)
+        """
         for companionship in district.companionships:
             print("Deleting", companionship, "from", district)
             if not preview:
@@ -377,6 +478,11 @@ class MinisteringSession:
     def copy_companionships(self, from_districts, to_district, preview=False):
         """Copy companionships from from_districts to to_district, optionally
         previewing the result before committing
+
+        Keyword arguments:
+        from_districts -- districts to copy companionships from
+        to_district -- district to copy companionships to
+        preview -- preview output before committing changes (default: False)
 
         Example:
         Copy companionships from first three districts to the sixth
@@ -399,7 +505,7 @@ class MinisteringSession:
         eligibles -- list of eligible assignments to distribute 
                      (default: None, loads list of eligible assignments
                      from database)
-        preview -- set to True to preview the output without making any changes
+        preview -- preview output before committing changes (default: False)
 
         Example:
         Distribute unassigned households to the companionships in district 6
@@ -447,12 +553,34 @@ class MinisteringSession:
 
         
     def save_data(self, filename='ministering_data.json'):
+        """Save downloaded ministering data to file
+
+        NOTE: this feature is for debug purposes only. It is not intended to
+        be used for long-term storage of membership records, exporting data to
+        third-party applications, or for any purpose other than to perform the
+        official duties of Elders Quorum or Relief Society Presidencies.
+        See https://www.lds.org/legal/privacy-notice?lang=eng&country=go.
+
+        Keyword arguments:
+        filename -- name of file to save (default: 'ministering_data.json')
+        """
         if self._data is None or self._stale:
             self.download_assignments()
         with open(filename, 'w') as fp:
             json.dump(self._data, fp)
 
     def load_data(self, filename='ministering_data.json', dataset='elders'):
+        """Load ministering data from a file
+
+        NOTE: this feature is for debug purposes only. It is not intended to
+        be used for long-term storage of membership records, exporting data to
+        third-party applications, or for any purpose other than to perform the
+        official duties of Elders Quorum or Relief Society Presidencies.
+        See https://www.lds.org/legal/privacy-notice?lang=eng&country=go.
+
+        Keyword arguments:
+        filename -- name of file to load (default: 'ministering_data.json')
+        """
         with open(filename, 'r') as fp:
             self._data = json.load(fp)
         self._assignments = MinisteringAssignments(self._data, dataset)
@@ -461,12 +589,25 @@ class MinisteringSession:
         self._stale = False
 
     def save_session(self, filename='ministering_session.json'):
+        """Save the current login session, allowing it to be reloaded by future
+        invocations of this script within the timeout period
+
+        Keyword arguments:
+        filename -- name of file to save (default: 'ministering_session.json')
+        """
         if self._session is None:
             self.login()
         with open(filename, 'w') as fp:
             json.dump(requests.utils.dict_from_cookiejar(self._session.cookies), fp)
 
     def load_session(self, filename='ministering_session.json'):
+        """Load a login session from disk, allowing a continuation of a session
+        started in a previous invocation of this script within the timeout
+        period
+
+        Keyword arguments:
+        filename -- name of file to load (default: 'ministering_session.json')
+        """
         with open(filename, 'r') as fp:
             self._session = requests.session()
             self._session.cookies = requests.utils.cookiejar_from_dict(json.load(fp))
@@ -502,28 +643,6 @@ class MinisteringSession:
         return records
 
 if __name__ == '__main__':
-    import menu3
-
-    def display_district():
-        ...
-
-    def initialMenu():
-        m = menu3.Menu(ALLOW_QUIT=True)
-        menuitems = [
-            ('Login', ms.login),
-            ('Load session from disk', ms.load_session),
-            ('Save session to disk', ms.save_session),
-            ('Load assignments from disk', ms.load_data),
-            ('Save assignments to disk', ms.save_data),
-            ('Download assignments from lds.org', ms.download_assignments),
-            ('Display district', displayDistrict)
-        ]
-
-        items, actions = zip(*menuitems)
-        choice = m.menu("Select an option below:", items)
-        actions[choice-1]()
-
-
     # initialize session
     ms = MinisteringSession()
 
@@ -531,6 +650,3 @@ if __name__ == '__main__':
     ms.load_session()
     ms.load_data()
 
-    # display menu
-    # while True:
-    #     initialMenu()
