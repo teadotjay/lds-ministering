@@ -290,11 +290,12 @@ class MinisteringSession:
     def check_login(self):
         if self._session is None:
             return False
-        r = self._session.get('https://account.lds.org/features')
-        if r.status_code==200:
-            return True
-        else:
+        url = "https://lcr.lds.org/services/umlu/v1/ministering/sandbox-data-full?lang=eng&type=EQ"
+        r = self._session.get(url)
+        if "<!DOCTYPE" in r.text:
             return False
+        else:
+            return True
 
     def download_assignments(self, dataset='elders'):
         if not self.check_login():
@@ -349,6 +350,29 @@ class MinisteringSession:
             good_code = 200
         if r.status_code != good_code or 'assignmentErrors' in json.loads(r.text):
             raise ValueError((r.status_code, r.text))
+
+    def delete_companionship(self, companionship):
+        if not self.check_login():
+            self.login()
+        url = "https://lcr.lds.org/services/umlu/v1/ministering/sandbox-companionship/%s?lang=eng" % (
+                companionship.id)
+        r = self._session.delete(url)
+        good_code = 204
+        notfound_code = 400
+        notloggedin_code = 200
+        if r.status_code == notloggedin_code:
+            raise ValueError("Access denied (may need to log in again)")
+        elif r.status_code == notfound_code:
+            raise ValueError("Companionship not found")
+        elif r.status_code != good_code:
+            raise ValueError((r.status_code, r.text))
+        self._stale = True
+
+    def delete_companionships(self, district, preview=False):
+        for companionship in district.companionships:
+            print("Deleting", companionship, "from", district)
+            if not preview:
+                self.delete_companionship(companionship)
 
     def copy_companionships(self, from_districts, to_district, preview=False):
         """Copy companionships from from_districts to to_district, optionally
