@@ -403,7 +403,7 @@ class MinisteringSession:
     def update_companionship(self, district, companionship, ministers, assignments=[]):
         """ Update an existing companionship in the given district, with the
         given list of ministers and optional list of households; raise
-        ValueError if failed; attempt to log in if not currently logged in
+        ValueError if failed
 
         Keyword arguments:
         district -- District object of the district holding the companionship
@@ -413,8 +413,6 @@ class MinisteringSession:
         assignments -- optional list of households for the companionship, each 
                 given by a Person record
         """
-        if not self.check_login():
-            self.login()
         minister_string = [{'personUuid': x.id, 'legacyCmisId': x.legacy_id, 'overrideWarnings': True} for x in ministers]
         assignment_string = [{'personUuid': x.id, 'legacyCmisId': x.legacy_id, 'overrideWarnings': True} for x in assignments]
         if companionship is None:
@@ -440,13 +438,11 @@ class MinisteringSession:
 
     def delete_companionship(self, companionship):
         """ Delete an existing companionship; raise PermissionError or
-        ValueError if failed; attempt to log in if not currently logged in
+        ValueError if failed
 
         Keyword arguments:
         companionship -- Companionship record of the companionship to be deleted
         """
-        if not self.check_login():
-            self.login()
         url = "https://lcr.lds.org/services/umlu/v1/ministering/sandbox-companionship/%s?lang=eng" % (
                 companionship.id)
         r = self._session.delete(url)
