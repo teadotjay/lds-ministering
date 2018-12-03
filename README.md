@@ -147,7 +147,7 @@ ms.delete_companionship(my_companionship)
 ```
 
 You can also delete *all* the companionships in the district, for example, if you want to start over and re-populate
-them. The section below gives some examples of this.
+them. The section below gives an example of this.
 
 ```python
 ms.delete_companionships(my_district)
