@@ -59,7 +59,6 @@ are returned as a Person record.
 ```
 In [3]: ms.assignments.districts
 Out [3]:
-Out[4]: 
 [District("District 1"),
  District("District 2"),
  District("District 3")]
@@ -71,3 +70,6 @@ Out[4]:
  Out [4]:
  [Companionship("Priesthood, Peter and Moriankumr, Mahonri"),
   Companionship("Mormon, Mark and Mormon, Molly")]
+```
+
+Districts also have properties for their unique `id`, `name`, and `supervisor`.
