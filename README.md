@@ -170,7 +170,7 @@ OK, this one is a little application-specific, but we use it in our ward to make
 at least have someone identified as a point of contact. It distributes the `unassigned_households` evenly and
 randomly among the companionships of a given district, respecting any assignments that already exist.
 
-We use district 6 for this purpose:
+Our ward uses district 6 for this purpose:
 
 ```python
 ms.distribute_assignments(ms.assignments.districts[5], preview=False)
