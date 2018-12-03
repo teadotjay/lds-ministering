@@ -122,7 +122,7 @@ unassigned households to these two poor souls. (Don't actually do this.)
 ```python
 district = ms.assignments.districts[1]  # selects second district
 minister1 = ms.unassigned_ministers[0]  # selects the first unassigned minister
-minister2 = ms.unassigned_ministers[1]  # selects the first unassigned minister
+minister2 = ms.unassigned_ministers[1]  # selects the second unassigned minister
 households = ms.unassigned_households   # selects all unassigned households
 ms.create_companionship(district, ministers=[minister1, minister2], assignments=households)
 ```
