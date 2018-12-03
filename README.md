@@ -2,7 +2,7 @@
 ## Introduction
 This is a Python interface to the online ministering assignments for the Church of Jesus Christ of Latter-Day Saints.
 It allows automation of repetitive tasks such as copying companionships from one district to another, deleting all
-companionships in a district, and distributed unassigned households among all the companionships in a district. Use
+companionships in a district, and distributing unassigned households among all the companionships in a district. Use
 is limited to authorized members of the Church, such as bishoprics, elders quorum presidencies, and relief society
 presendencies, and subject to the Church privacy policy at https://www.lds.org/legal/privacy-notice?lang=eng&country=go.
 
