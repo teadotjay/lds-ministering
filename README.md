@@ -32,7 +32,7 @@ password, but we do not recommend storing this anywhere as plaintext. Instead, i
 password, the library will prompt you on the command line.
 
 ```
-In [1]: ms.login()
+In  [1]: ms.login()
 Username: #######
 Password:
 ```
@@ -44,7 +44,7 @@ to populate the sandbox with the current assignments, or to discard any unpublis
 library does not provide either capability, to avoid accidentally clobbering any changes you may have in progress.
 
 ```
-In [2]: ms.download_assignments()
+In  [2]: ms.download_assignments()
 Downloading ministering assignments from https://lcr.lds.org/ministering-proposed-assignments?lang=eng&type=EQ
 ```
 
@@ -57,19 +57,34 @@ returns all companionships in all districts, a `ministers` property that returns
 Districts and companionships are returned as District and Companionship records, respectively. Ministers and households
 are returned as a Person record.
 ```
-In [3]: ms.assignments.districts
+In  [3]: ms.assignments.districts
 Out [3]:
 [District("District 1"),
  District("District 2"),
  District("District 3")]
  ```
  
- Districts also have a `companionships` property, which lists all companionships in the district.
- ```
- In [4]: ms.assignments.districts[0].companionships
- Out [4]:
- [Companionship("Priesthood, Peter and Moriankumr, Mahonri"),
-  Companionship("Mormon, Mark and Mormon, Molly")]
+Districts also have a `companionships` property, which lists all companionships in the district.
+```
+In  [4]: ms.assignments.districts[0].companionships
+Out [4]:
+[Companionship("Priesthood, Peter and Moriankumr, Mahonri"),
+ Companionship("Mormon, Mark and Mormon, Molly")]
 ```
 
 Districts also have properties for their unique `id`, `name`, and `supervisor`.
+
+Companionships also have a unique `id` and `name`, which is populated from the names of its `ministers`.
+```
+In  [5]: ms.assignments.districts[0].companionships[0].ministers
+Out [5]: [Person("Priesthood, Peter"), Person("Moriankumr, Mahonri")]
+```
+
+If the companionship has any household assignments, the `assignments` property will list them.
+```
+In  [6]: ms.assignments.districts[0].companionships[0].assignments
+Out [6]: [Person("Active, Les")]
+```
+
+Finally, the Person record, used for both ministers and households, lists the person's unique `id` in the system,
+their `name` (sometimes combined with spouse's name), and `email` address, if available.
