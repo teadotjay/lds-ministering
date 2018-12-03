@@ -142,8 +142,32 @@ discard the changes in the sandbox if you make a mistake, as long as you have no
 ms.delete_companionship(my_companionship)
 ```
 
-You can also delete 
+You can also delete *all* the companionships in the district, for example, if you want to start over and re-populate
+them. The section below gives some examples of this.
+
+```python
+ms.delete_companionships(my_district)
+```
 
 ### Copying companionships from one district (or more) to another
 If your ward uses districts to further subdivide companionships (primary route vs. texting route, etc.), the
-`copy_companionships` function may be useful.
+`copy_companionships` function may be useful. It copies all the companionships from one or more districts
+into another existing district. (Note: this does not check for duplicates, so be careful.) This command
+includes a `preview` argument so that you can preview the changes before making them in the sandbox.
+
+The following code copies companionships (but not their assignments) from districts 1-3 into district 6.
+
+```python
+ms.copy_companionships(ms.assignments.districts[0:3], ms.assignments.districts[5], preview=False)
+```
+
+### Distributing unassigned households among all the companionships in a district
+OK, this one is a little application-specific, but we use it in our ward to make sure all "unassigned" households
+at least have someone identified as a point of contact. It distributes the `unassigned_households` evenly and
+randomly among the companionships of a given district, respecting any assignments that already exist.
+
+We use district 6 for this purpose:
+
+```python
+ms.distribute_assignments(ms.assignments.districts[5], preview=False)
+```
