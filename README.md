@@ -107,8 +107,42 @@ To get the list of unassigned ministers and households, use the `unassigned_mini
 property of the MinisteringSession object.
 
 ### Creating, modifying, and deleting companionships
+At this time, you cannot add or remove districts; you'll need to use the online tool for that. You can, however,
+create, modify, and delete companionships. When you create or modify a companionship, you provide the district
+for that companionship, a list of ministers, and an optional list of households. (If households are not specified,
+this creates an empty companionship.)
+
+For example, the code below creates a new companionship using the first two unassigned ministers and assigns all 
+unassigned households to these two poor souls. (Don't actually do this.)
+
 ```python
-In  [8]: ms.create_companionship(
+district = ms.assignments.districts[1]  # selects second district
+minister1 = ms.unassigned_ministers[0]  # selects the first unassigned minister
+minister2 = ms.unassigned_ministers[1]  # selects the first unassigned minister
+households = ms.unassigned_households   # selects all unassigned households
+ms.create_companionship(district, ministers=[minister1, minister2], assignments=households)
+```
+
+Similarly, the code below edits an existing companionship at random from one of the first three districts, adding
+an unassigned household at random. (Don't do this either, unless you want an angry bishopric.)
+
+```python
+district = random.choice(ms.assignments.districts[0:3])
+companionship = random.choice(district.companionships)
+new_household = random.choice(ms.unassigned_households)
+households = companionship.assignments + [new_household]
+ms.update_companionship(district, companionship, companionship.ministers, households)
+```
+
+Deleting a companionship is simple; you need only provide the Companionship object. Note: this deletes the 
+companionship and un-assigns its ministers and households. Be sure you know what you're doing. (You can always 
+discard the changes in the sandbox if you make a mistake, as long as you have not yet published them.)
+
+```python
+ms.delete_companionship(my_companionship)
+```
+
+You can also delete 
 
 ### Copying companionships from one district (or more) to another
 If your ward uses districts to further subdivide companionships (primary route vs. texting route, etc.), the
