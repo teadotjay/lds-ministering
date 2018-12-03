@@ -31,7 +31,7 @@ The first step is to log in with your lds.org username and password. The library
 password, but we do not recommend storing this anywhere as plaintext. Instead, if you do not pass in a username or 
 password, the library will prompt you on the command line.
 
-```python
+```
 In [1]: ms.login()
 Username: #######
 Password:
@@ -43,10 +43,31 @@ with the current assignments. There is an option at https://lcr.lds.org/minister
 to populate the sandbox with the current assignments, or to discard any unpublished changes and start over. The Python
 library does not provide either capability, to avoid accidentally clobbering any changes you may have in progress.
 
-```python
+```
 In [2]: ms.download_assignments()
 Downloading ministering assignments from https://lcr.lds.org/ministering-proposed-assignments?lang=eng&type=EQ
 ```
 
 ### Listing assigned districts and companionships
-Districts, companionships, and ...
+The MinisteringSession contains an `assignments` property, which returns a MinisteringAssignments object. This object
+has a `districts` property that returns all districts (with or without assignments), a `companionships` property that
+returns all companionships in all districts, a `ministers` property that returns all assigned ministers, and an
+`assignments` property that returns all assigned households.
+
+Districts and companionships are returned as District and Companionship records, respectively. Ministers and households
+are returned as a Person record.
+```
+In [3]: ms.assignments.districts
+Out [3]:
+Out[4]: 
+[District("District 1"),
+ District("District 2"),
+ District("District 3")]
+ ```
+ 
+ Districts also have a `companionships` property, which lists all companionships in the district.
+ ```
+ In [4]: ms.assignments.districts[0].companionships
+ Out [4]:
+ [Companionship("Priesthood, Peter and Moriankumr, Mahonri"),
+  Companionship("Mormon, Mark and Mormon, Molly")]
