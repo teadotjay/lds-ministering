@@ -56,7 +56,7 @@ returns all companionships in all districts, a `ministers` property that returns
 
 Districts and companionships are returned as District and Companionship records, respectively. Ministers and households
 are returned as a Person record.
-```
+```python
 In  [3]: ms.assignments.districts
 Out [3]:
 [District("District 1"),
@@ -65,7 +65,7 @@ Out [3]:
  ```
  
 Districts also have a `companionships` property, which lists all companionships in the district.
-```
+```python
 In  [4]: ms.assignments.districts[0].companionships
 Out [4]:
 [Companionship("Priesthood, Peter and Moriankumr, Mahonri"),
@@ -75,16 +75,30 @@ Out [4]:
 Districts also have properties for their unique `id`, `name`, and `supervisor`.
 
 Companionships also have a unique `id` and `name`, which is populated from the names of its `ministers`.
-```
+```python
 In  [5]: ms.assignments.districts[0].companionships[0].ministers
 Out [5]: [Person("Priesthood, Peter"), Person("Moriankumr, Mahonri")]
 ```
 
 If the companionship has any household assignments, the `assignments` property will list them.
-```
+```python
 In  [6]: ms.assignments.districts[0].companionships[0].assignments
 Out [6]: [Person("Active, Les")]
 ```
 
 Finally, the Person record, used for both ministers and households, lists the person's unique `id` in the system,
 their `name` (sometimes combined with spouse's name), and `email` address, if available.
+
+### Listing all or unassigned ministers and households
+The `assignments` property lists only assigned members; the `eligible` property lists all eligible ministers and
+households (those capable of ministering or ministered to within the current organization, e.g. elders quorum).
+
+The `eligibles` property returns a MinisteringEligible object, which has properties `ministers` and `assignments`
+similar to a MinisteringAssignments object.
+
+You can also filter ministers and assignments (households) by `name` or `id`. Searching by name includes all records 
+that contain the string specified in the `name` argument.
+```python
+In  [7]: ms.eligibles.get_assignments(name='Active')
+Out [7]: [Person("Active, Les"), Person("Active, Moe")]
+```
