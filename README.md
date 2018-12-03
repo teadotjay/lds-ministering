@@ -48,6 +48,10 @@ In  [2]: ms.download_assignments()
 Downloading ministering assignments from https://lcr.lds.org/ministering-proposed-assignments?lang=eng&type=EQ
 ```
 
+Library functions that modify online data will trigger an automatic re-download of the database on any subsequent data
+access. However, if you or someone else makes changes on the web site, you will need to manually re-download in order for 
+the MinisteringSession to reflect any changes the library doesn't know about.
+
 ### Listing assigned districts and companionships
 The MinisteringSession contains an `assignments` property, which returns a MinisteringAssignments object. This object
 has a `districts` property that returns all districts (with or without assignments), a `companionships` property that
