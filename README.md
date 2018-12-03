@@ -31,7 +31,7 @@ The first step is to log in with your lds.org username and password. The library
 password, but we do not recommend storing this anywhere as plaintext. Instead, if you do not pass in a username or 
 password, the library will prompt you on the command line.
 
-```
+```python
 In  [1]: ms.login()
 Username: #######
 Password:
@@ -102,3 +102,14 @@ that contain the string specified in the `name` argument.
 In  [7]: ms.eligibles.get_assignments(name='Active')
 Out [7]: [Person("Active, Les"), Person("Active, Moe")]
 ```
+
+To get the list of unassigned ministers and households, use the `unassigned_ministers` or `unassigned_households`
+property of the MinisteringSession object.
+
+### Creating, modifying, and deleting companionships
+```python
+In  [8]: ms.create_companionship(
+
+### Copying companionships from one district (or more) to another
+If your ward uses districts to further subdivide companionships (primary route vs. texting route, etc.), the
+`copy_companionships` function may be useful.
